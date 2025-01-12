@@ -1,14 +1,28 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, tool } from "ai";
 import { z } from "zod";
 
 export const maxDuration = 30;
 
+const serviceUrls = [
+  "https://api.gpt.ge/v1",
+  "https://api.vveai.com/v1",
+  "https://api.v3.cm/v1",
+  "https://api.v36.cm/v1",
+  "https://run.v36.cm/v1",
+  "https://cf.v36.cm/v1",
+  // Add more service URLs as needed
+];
+
+const openai = createOpenAI({
+  baseURL: serviceUrls[5],
+});
+
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     messages,
     tools: {
       weather: tool({
