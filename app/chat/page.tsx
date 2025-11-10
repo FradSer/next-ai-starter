@@ -1,53 +1,158 @@
 "use client";
 
-import { type Message, useChat } from "ai/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  toolInvocations?: unknown;
+};
 
 export default function Chat() {
   const searchParams = useSearchParams();
   const initialSubmitDone = useRef(false);
   const question = searchParams.get("question");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [input, setInput] = useState(question ?? "");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesRef = useRef<ChatMessage[]>([]);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      maxSteps: 5,
-      initialInput: question || "",
-    });
+  const setAndStoreMessages = useCallback(
+    (next: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+      setMessages((prev) => {
+        const resolved = typeof next === "function" ? next(prev) : next;
+        messagesRef.current = resolved;
+        return resolved;
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  const submitMessage = useCallback(
+    async (messageText: string) => {
+      const trimmed = messageText.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: trimmed,
+      };
+
+      const updatedMessages = [...messagesRef.current, userMessage];
+      messagesRef.current = updatedMessages;
+      setMessages(updatedMessages);
+      setInput("");
+      setIsLoading(true);
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: updatedMessages.map(({ role, content }) => ({
+              role,
+              content,
+            })),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const assistantText = response.body
+          ? await new Response(response.body).text()
+          : await response.text();
+
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: assistantText.trim(),
+        };
+
+        setAndStoreMessages((prev) => [...prev, assistantMessage]);
+      } catch (error) {
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? `Something went wrong: ${error.message}`
+              : "Something went wrong.",
+        };
+
+        setAndStoreMessages((prev) => [...prev, assistantMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setAndStoreMessages],
+  );
 
   useEffect(() => {
     if (question && !initialSubmitDone.current) {
       initialSubmitDone.current = true;
-      handleSubmit();
+      submitMessage(question);
     }
-  }, [question, handleSubmit]);
+  }, [question, submitMessage]);
+
+  const latestMessageId =
+    messages.length > 0 ? messages[messages.length - 1]?.id : undefined;
 
   useEffect(() => {
+    if (!latestMessageId) {
+      return;
+    }
+
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, []);
+  }, [latestMessageId]);
 
   const handleChatSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await handleSubmit(event);
+    await submitMessage(input);
   };
+
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setInput(event.target.value);
+    },
+    [],
+  );
+
+  const renderedMessages = useMemo(
+    () =>
+      messages.map((message) => (
+        <div key={message.id} className="whitespace-pre-wrap">
+          {message.role === "user" ? "User: " : "AI: "}
+          {message.toolInvocations ? (
+            <pre>{JSON.stringify(message.toolInvocations, null, 2)}</pre>
+          ) : (
+            <p>{message.content}</p>
+          )}
+        </div>
+      )),
+    [messages],
+  );
 
   return (
     <div className="">
-      {messages.map((m: Message) => (
-        <div key={m.id} className="whitespace-pre-wrap">
-          {m.role === "user" ? "User: " : "AI: "}
-          {m.toolInvocations ? (
-            <pre>{JSON.stringify(m.toolInvocations, null, 2)}</pre>
-          ) : (
-            <p>{m.content}</p>
-          )}
-        </div>
-      ))}
+      {renderedMessages}
 
       <div ref={messagesEndRef} />
 
