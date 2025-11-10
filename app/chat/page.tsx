@@ -1,6 +1,6 @@
 "use client";
 
-import { Message, useChat } from "ai/react";
+import { type Message, useChat } from "ai/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -29,7 +29,7 @@ export default function Chat() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, []);
 
   const handleChatSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
