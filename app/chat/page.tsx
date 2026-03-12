@@ -5,12 +5,11 @@ import { ArrowLeftIcon, SendIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-
-import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 function TypingIndicator() {
   return (
@@ -63,7 +62,7 @@ function ChatComponent() {
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
-        <Button variant="ghost" size="icon" className="size-8 shrink-0" asChild>
+        <Button className="size-8 shrink-0" asChild>
           <Link href="/">
             <ArrowLeftIcon />
           </Link>
@@ -158,7 +157,7 @@ function ChatComponent() {
           />
           <Button
             type="submit"
-            size="icon"
+            className="size-10"
             disabled={isLoading || !input.trim()}
           >
             <SendIcon data-icon="inline-end" />
