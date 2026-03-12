@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText, tool } from "ai";
+import { isTextUIPart, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
 export const maxDuration = 30;
@@ -23,7 +23,15 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: openai("gpt-4o-mini"),
-    messages,
+    messages: messages.map((message: UIMessage) => {
+      const textContent =
+        message.parts
+          ?.filter(isTextUIPart)
+          .map((part) => part.text)
+          .join("") ?? "";
+
+      return { role: message.role, content: textContent };
+    }),
     tools: {
       weather: tool({
         description: "Get the weather in a location (farenheit)",

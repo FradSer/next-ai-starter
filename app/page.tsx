@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function Chat() {
+export default function Home() {
   const [question, setQuestion] = useState("");
   const router = useRouter();
 
@@ -20,62 +20,54 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-screen flex-col items-start justify-center space-y-8">
-      <div className="space-y-2">
-        <div className="flex items-center">
-          <h1 className="text-xl font-bold">Next.js AI Starter</h1>
-          <Button
-            variant="link"
-            onClick={() =>
-              window.open(
-                "https://github.com/FradSer/next-ai-starter",
-                "_blank",
-              )
-            }
+    <div className="flex h-screen flex-col items-center justify-center gap-8">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Next.js AI Starter
+          </h1>
+          <a
+            href="https://github.com/FradSer/next-ai-starter"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <Image
               src="https://img.shields.io/badge/github-%23121011.svg?style=falt&logo=github&logoColor=white"
-              alt="GitHub Badge"
+              alt="GitHub"
               width={64}
-              height={16}
+              height={20}
             />
-          </Button>
+          </a>
         </div>
-
-        <p className="text-gray-700">
+        <p className="text-sm text-muted-foreground">
           Welcome to our chat app, please enter your question.
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-full flex-col space-x-0 space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0"
-      >
+      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
         <Input
           type="text"
           value={question}
           placeholder="Say something..."
           onChange={(e) => setQuestion(e.target.value)}
+          className="h-11"
         />
-        <Button
-          variant="outline"
-          type="submit"
-          className="mx-0 w-full sm:max-w-24"
-        >
-          Submit
+        <Button type="submit" disabled={!question.trim()}>
+          Start chatting
+          <ArrowRightIcon data-icon="inline-end" />
         </Button>
       </form>
-      <footer className="fixed bottom-4 left-1/2 flex -translate-x-1/2 transform items-center justify-center text-base text-gray-700">
-        <p>Made with ❤️ by</p>
-        <Button
-          variant="link"
-          asChild
-          className="mx-1.5 w-2 text-base text-gray-700"
+
+      <footer className="absolute bottom-6 flex items-center gap-1 text-xs text-muted-foreground">
+        <span>Made with ❤️ by</span>
+        <a
+          href="https://www.frad.me/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline-offset-4 hover:underline"
         >
-          <Link href="https://www.frad.me/" target="_blank">
-            Frad
-          </Link>
-        </Button>
+          Frad
+        </a>
       </footer>
     </div>
   );
